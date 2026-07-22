@@ -7,9 +7,16 @@ import 'package:sqflite/sqflite.dart';
 /// Tablolar: `cards` (seed edilir, salt okunur), `user_progress` (SM-2 verisi),
 /// `streak_log` (günlük streak kaydı). Bkz. SAVANT_SPEC.md bölüm 3.
 class DatabaseService {
-  DatabaseService._internal();
+  DatabaseService._internal({String? testPath}) : _testPath = testPath;
 
   static final DatabaseService instance = DatabaseService._internal();
+
+  /// Testlerde gerçek bir cihaz/emülatör olmadan (örn. `sqflite_common_ffi`
+  /// ile) DB'ye bağlanabilmek için `path_provider` yerine sabit bir path kullanır.
+  factory DatabaseService.forTesting(String path) =>
+      DatabaseService._internal(testPath: path);
+
+  final String? _testPath;
 
   static const String _dbName = 'savant.db';
   static const int _dbVersion = 1;
@@ -26,8 +33,8 @@ class DatabaseService {
   }
 
   Future<Database> _initDatabase() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final path = join(directory.path, _dbName);
+    final path = _testPath ??
+        join((await getApplicationDocumentsDirectory()).path, _dbName);
 
     return openDatabase(
       path,
