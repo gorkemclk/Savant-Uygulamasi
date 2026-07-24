@@ -1,4 +1,3 @@
-/// `user_progress` tablosundaki bir satırı temsil eder (SM-2 algoritması verisi).
 class UserProgressModel {
   const UserProgressModel({
     required this.cardId,
@@ -17,7 +16,7 @@ class UserProgressModel {
   final String nextReviewDate;
   final String? lastReviewedDate;
   final String status;
-
+///veri tabanından okuma yapılan yer, sqlite satırı dart nesnesine çeviriliyor
   factory UserProgressModel.fromMap(Map<String, dynamic> map) {
     return UserProgressModel(
       cardId: map['card_id'] as String,
@@ -29,7 +28,7 @@ class UserProgressModel {
       status: map['status'] as String,
     );
   }
-
+///veritabanına yazılan yer
   Map<String, dynamic> toMap() {
     return {
       'card_id': cardId,
@@ -41,7 +40,7 @@ class UserProgressModel {
       'status': status,
     };
   }
-
+///kopyala ve değiştir
   UserProgressModel copyWith({
     int? repetitionCount,
     double? easeFactor,

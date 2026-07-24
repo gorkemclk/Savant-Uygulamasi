@@ -1,18 +1,16 @@
+import 'package:intl/intl.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
-/// SQLite şemasını oluşturur ve tekil (singleton) [Database] erişimi sağlar.
-///
-/// Tablolar: `cards` (seed edilir, salt okunur), `user_progress` (SM-2 verisi),
-/// `streak_log` (günlük streak kaydı). Bkz. SAVANT_SPEC.md bölüm 3.
+import '../models/card_model.dart';
+
+/// Telefon hafızasında savant.db adında yerel veritabanı dosyasını yönetir.
 class DatabaseService {
   DatabaseService._internal({String? testPath}) : _testPath = testPath;
 
   static final DatabaseService instance = DatabaseService._internal();
 
-  /// Testlerde gerçek bir cihaz/emülatör olmadan (örn. `sqflite_common_ffi`
-  /// ile) DB'ye bağlanabilmek için `path_provider` yerine sabit bir path kullanır.
   factory DatabaseService.forTesting(String path) =>
       DatabaseService._internal(testPath: path);
 
@@ -81,11 +79,49 @@ class DatabaseService {
     ''');
   }
 
-  /// Kartların DB'de zaten seed edilip edilmediğini kontrol etmek için kullanılır.
   Future<int> get cardCount async {
     final db = await database;
     final result = await db.rawQuery('SELECT COUNT(*) AS count FROM $tableCards');
     return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  /// `next_review_date`'i bugüne veya öncesine denk gelen kartları döner.
+  ///
+  /// Kartlar seed edilirken `next_review_date` seed gününe ayarlandığı için
+  /// (bkz. seed_service.dart), bu tek koşul hem "vadesi gelmiş eski kartları"
+  /// hem "hiç görülmemiş yeni kartları" birlikte kapsar.
+  Future<List<CardModel>> getTodaysCards({int limit = 15, DateTime? now}) async {
+    final db = await database;
+    final today = DateFormat('yyyy-MM-dd').format(now ?? DateTime.now());
+
+    final rows = await db.rawQuery('''
+      SELECT $tableCards.* FROM $tableCards
+      INNER JOIN $tableUserProgress ON $tableCards.id = $tableUserProgress.card_id
+      WHERE $tableUserProgress.next_review_date <= ?
+      ORDER BY RANDOM()
+      LIMIT ?
+    ''', [today, limit]);
+
+    return rows.map(CardModel.fromMap).toList();
+  }
+
+  /// Kategori başına "known" durumundaki kartların oranını (0.0 - 1.0) döner.
+  Future<Map<String, double>> getCategoryProgress() async {
+    final db = await database;
+
+    final rows = await db.rawQuery('''
+      SELECT $tableCards.category AS category,
+             COUNT(*) AS total,
+             SUM(CASE WHEN $tableUserProgress.status = 'known' THEN 1 ELSE 0 END) AS known
+      FROM $tableCards
+      INNER JOIN $tableUserProgress ON $tableCards.id = $tableUserProgress.card_id
+      GROUP BY $tableCards.category
+    ''');
+
+    return {
+      for (final row in rows)
+        row['category'] as String: (row['known'] as int) / (row['total'] as int),
+    };
   }
 
   Future<void> close() async {

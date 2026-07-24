@@ -16,7 +16,7 @@
 
 - **Framework:** Flutter (en son stabil sürüm)
 - **Dil:** Dart
-- **State Management:** Riverpod (flutter_riverpod paketi)
+- **State Management:** `StatefulWidget` + `setState` (ekran-özel state); ekranlar arası paylaşılan state için Flutter'ın built-in `ChangeNotifier`'ı (`AppState` sınıfı, en üst widget'ta tek instance oluşturulup constructor injection ile alt ekranlara geçirilir) — ek paket kullanılmıyor
 - **Local Database:** SQLite (sqflite paketi)
 - **Bildirimler:** flutter_local_notifications
 - **Grafik/İstatistik:** fl_chart
@@ -151,11 +151,11 @@ lib/
     trivia_api_service.dart   // HTTP GET + JSON parse + hata yönetimi
   models/
     bonus_question_model.dart // BonusQuestion sınıfı
-  providers/
-    bonus_question_provider.dart  // Riverpod: günlük bonus soru state'i
   widgets/
     bonus_question_card.dart  // UI: "🎁 Günün Bonus Soruları" bölümü
 ```
+
+Günlük bonus soru state'i ayrı bir provider dosyası yerine, bu bölümü gösteren ekranın kendi `State` sınıfında (`initState()`'te `TriviaApiService` çağrısı) tutulur.
 
 **Gerekli paket:** `http` (pubspec.yaml'a eklenmeli)
 
@@ -187,6 +187,7 @@ fetchDailyBonusQuestions():
 ```
 lib/
   main.dart
+  app_state.dart                 // Ekranlar arası paylaşılan state (ChangeNotifier)
   models/
     card_model.dart
     user_progress_model.dart
@@ -198,11 +199,6 @@ lib/
     spaced_repetition_service.dart  // SM-2 algoritması
     notification_service.dart
     trivia_api_service.dart      // Open Trivia DB API entegrasyonu (Bölüm 6.5)
-  providers/
-    card_provider.dart           // Riverpod providers
-    progress_provider.dart
-    streak_provider.dart
-    bonus_question_provider.dart // Bölüm 6.5
   screens/
     home_screen.dart
     study_screen.dart
@@ -242,12 +238,14 @@ Bu dokümanı ve `cards.json` dosyasını Claude Code'a verdikten sonra şu şek
 
 > "Bu spec dokümanına göre Flutter projesinin iskeletini oluştur: pubspec.yaml bağımlılıkları, klasör yapısı, cards.json'u assets'e ekleme ve SQLite şemasını oluşturan database_service.dart dosyasını yaz. Riverpod kullan."
 
+> **Not (sonradan güncellendi):** Proje Riverpod ile başladı, ama Gün 2 sonunda `StatefulWidget` + `setState` + built-in `ChangeNotifier` (`AppState`) mimarisine geçildi (bkz. Bölüm 2). Yukarıdaki alıntı, o anki orijinal isteği olduğu gibi koruyor; güncel state management yaklaşımı için Bölüm 2'ye bak.
+
 Sonraki günlerde milestone planındaki her adımı ayrı ayrı isteyerek ilerle — tek seferde her şeyi istemek yerine adım adım gitmek hem kaliteyi artırır hem de neyi neden yaptığını takip etmeni kolaylaştırır (staj raporunda işine yarar).
 
 ---
 
 ## 10. Staj Raporu İçin Notlar
 
-- **Kullanılan mimari desenler:** Repository/Service pattern, Provider pattern (state management), Observer pattern (Riverpod state dinleme)
+- **Kullanılan mimari desenler:** Repository/Service pattern, Observer pattern (paylaşılan state için `ChangeNotifier`/`addListener`, ekran-özel state için `StatefulWidget`/`setState`)
 - **Öne çıkarılabilecek teknik konular:** Local database tasarımı ve normalizasyon, spaced repetition algoritması (bilişsel bilim temelli), local notification zamanlama, state management mimarisi
 - **Vurgulanabilecek nokta:** Uygulamanın çekirdek işlevselliği (kart tekrar sistemi, quiz, streak) tamamen offline çalışıyor — bu güvenlik ve performans açısından bilinçli bir mimari tercih. Buna ek olarak "Günün Bonus Soruları" özelliğiyle Open Trivia DB (opentdb.com) açık kaynak API'sinden canlı veri çekiliyor; bu da HTTP istekleri, JSON parse etme, hata yönetimi (network hatası, timeout, geçersiz yanıt) ve local cache stratejisi (günde bir kez çekme) gibi konularda pratik gösteriyor. İki yaklaşımın bir arada kullanılması — offline-first çekirdek + opsiyonel online zenginleştirme — bilinçli bir mimari karar olarak raporda sunulabilir.

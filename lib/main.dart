@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'app_state.dart';
+import 'screens/home_screen.dart';
 import 'services/seed_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SeedService().seedIfNeeded();
-  runApp(const ProviderScope(child: SavantApp()));
+  runApp(SavantApp());
 }
 
 class SavantApp extends StatelessWidget {
-  const SavantApp({super.key});
+  SavantApp({super.key});
+
+  /// Ekranlar arası paylaşılan tek state instance'ı. İhtiyacı olan
+  /// ekranlara constructor üzerinden geçirilir (bkz. app_state.dart).
+  final AppState appState = AppState();
 
   @override
   Widget build(BuildContext context) {
@@ -20,21 +25,7 @@ class SavantApp extends StatelessWidget {
         colorSchemeSeed: Colors.indigo,
         useMaterial3: true,
       ),
-      home: const _SkeletonHome(),
-    );
-  }
-}
-
-/// Gün 1 iskelet ekranı. Home/Study/Quiz/Stats/Settings ekranları
-/// sonraki milestone'larda screens/ altına eklenecek.
-class _SkeletonHome extends StatelessWidget {
-  const _SkeletonHome();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Savant')),
-      body: const Center(child: Text('Proje iskeleti hazır 🎉')),
+      home: HomeScreen(),
     );
   }
 }

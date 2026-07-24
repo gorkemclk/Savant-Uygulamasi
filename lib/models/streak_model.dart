@@ -1,4 +1,3 @@
-/// `streak_log` tablosundaki bir günü temsil eder.
 class StreakModel {
   const StreakModel({
     required this.date,

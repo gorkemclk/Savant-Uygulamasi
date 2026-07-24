@@ -7,11 +7,7 @@ import '../models/card_model.dart';
 import '../models/user_progress_model.dart';
 import 'database_service.dart';
 
-/// `assets/cards.json` dosyasını ilk açılışta SQLite'a yükler.
-///
-/// Her kart için aynı anda bir `user_progress` satırı da oluşturulur
-/// (status: "new"), böylece "bugün gösterilecek kartlar" sorguları
-/// tek tabloya bakarak çalışabilir. Zaten seed edilmişse hiçbir şey yapmaz.
+/// card.json'daki verileri veritabanına aktaran kısım.
 class SeedService {
   SeedService({DatabaseService? databaseService})
       : _databaseService = databaseService ?? DatabaseService.instance;

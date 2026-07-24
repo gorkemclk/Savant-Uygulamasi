@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'dart:math';
 
-/// `cards` tablosundaki (seed edilen, salt okunur) bir kartı temsil eder.
 class CardModel {
   const CardModel({
     required this.id,
@@ -20,7 +20,6 @@ class CardModel {
   final String explanation;
   final String difficulty;
 
-  /// `assets/cards.json` içindeki ham kayıttan oluşturur.
   factory CardModel.fromJson(Map<String, dynamic> json) {
     return CardModel(
       id: json['id'] as String,
@@ -33,7 +32,6 @@ class CardModel {
     );
   }
 
-  /// sqflite'tan okunan bir satırdan oluşturur (`options` DB'de JSON string olarak tutulur).
   factory CardModel.fromMap(Map<String, dynamic> map) {
     return CardModel(
       id: map['id'] as String,
@@ -56,5 +54,22 @@ class CardModel {
       'explanation': explanation,
       'difficulty': difficulty,
     };
+  }
+
+  CardModel shuffled([Random? random]) {
+    final rng = random ?? Random();
+    final order = List<int>.generate(options.length, (i) => i)..shuffle(rng);
+    final newOptions = [for (final i in order) options[i]];
+    final newCorrectIndex = order.indexOf(correctIndex);
+
+    return CardModel(
+      id: id,
+      category: category,
+      question: question,
+      options: newOptions,
+      correctIndex: newCorrectIndex,
+      explanation: explanation,
+      difficulty: difficulty,
+    );
   }
 }
